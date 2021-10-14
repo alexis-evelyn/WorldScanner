@@ -81,7 +81,7 @@ def main_single_player(world_folder: str):
 
     # If The End Exists, Add To The Scan List
     if os.path.exists(the_end_path):
-        dimensions_to_scan.append(nether_path)
+        dimensions_to_scan.append(the_end_path)
 
     # If Custom Dimensions Exist, Add To The Scan List
     if os.path.exists(custom_dimensions_path):
