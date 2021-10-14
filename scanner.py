@@ -113,6 +113,9 @@ def main_single_player(world_folder: str):
             else:
                 dimension_folder_name: str = os.path.basename(dimension)
 
+            # TODO: Fix This Breakage!!!
+            # world.iter_nbt() is what hermitcraft7 breaks:
+            #   UnicodeDecodeError: 'utf-8' codec can't decode byte 0xed in position 9: invalid continuation byte
             for chunk in world.iter_nbt():
                 check_storages(chunk=chunk, dimension=dimension_folder_name)
     except KeyboardInterrupt:
@@ -132,6 +135,7 @@ def main(world_folder: str):
 # List Of Worlds To Test Against
 # https://hermitcraft.fandom.com/wiki/Map_Downloads
 # https://www.2b2t.online/wiki/World%20Downloads
+# hermitcraft7 currently breaks the scanner. Chunk corruption?
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print("No World Folder Specified!!!")
