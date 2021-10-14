@@ -31,6 +31,7 @@ def check_storages(chunk: nbt.chunk, dimension: str):
     #   Minecart Chests/Furnaces, Regular Chests, Trapped Chests, Furnaces, Blast Furnaces,
     #   Lecterns, Hoppers, Etc...
 
+    # TODO: (1463, 201, 1337) - Find Out Where The Illegal Sword's Gone
     for entity in chunk_data["TileEntities"]:
         id: str = entity["id"].value
         x, y, z = entity["x"].value, entity["y"].value, entity["z"].value
@@ -52,6 +53,8 @@ def check_storages(chunk: nbt.chunk, dimension: str):
 
 
 def main_single_player(world_folder: str):
+    # TODO: Scan Player Inventories And Ender Chests
+
     nether_path: str = os.path.join(world_folder, "DIM-1")
     overworld_path: str = world_folder
     the_end_path: str = os.path.join(world_folder, "DIM1")
