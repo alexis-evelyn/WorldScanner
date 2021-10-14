@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import List
+from typing import List, Optional
 
 import nbt
 from nbt.world import WorldFolder
@@ -10,11 +10,19 @@ from nbt.world import WorldFolder
 def check_storages(chunk: nbt.chunk, dimension: str):
     # TODO: Look Up Chunk Version Differences And Create Handlers
     #   For Each Of The Differences (Then Abstract The Data To My Own Format)
-    chunk_version: int = chunk["DataVersion"]
+    chunk_version: Optional[int] = None
+
+    # Cause Apparently 2b2t World Downloads Have Some Tags Missing
+    if "DataVersion" in chunk:
+        chunk_version: Optional[int] = chunk["DataVersion"]
 
     # The author themselves' mentioned just looking up the data myself and not using nbt.chunk.Chunk
     chunk_data: nbt.nbt = chunk["Level"]
-    chunk_status: str = chunk_data["Status"]
+    chunk_status: Optional[str] = None
+
+    # Cause Apparently 2b2t World Downloads Have Some Tags Missing
+    if "Status" in chunk_data:
+        chunk_status: str = chunk_data["Status"]
 
     # In Chunks From Origin (0, 0, 0)
     x_pos: int = chunk_data["xPos"]
@@ -23,10 +31,11 @@ def check_storages(chunk: nbt.chunk, dimension: str):
     # print(f"Dimension: %s - Chunk (%s, %s)" % (dimension, x_pos, z_pos))
 
     # If Not full, chunk is not fully generated yet and can be ignored for illegal item searching
-    if chunk_status.value.strip() != "full":
+    if chunk_status is not None and chunk_status.value.strip() != "full":
         return
 
     # TileEntities (Block Entities), Entities, Sections (Blocks, A Bit Complicated)
+    # Starting In 1.17, Entities Won't Exist In This File Once A Chunk Is Fully Generated
     # TODO: Scan For Items, Mules, Donkeys, Horses (E.g. mobs with inventory),
     #   Minecart Chests/Furnaces, Regular Chests, Trapped Chests, Furnaces, Blast Furnaces,
     #   Lecterns, Hoppers, Etc...
@@ -41,7 +50,9 @@ def check_storages(chunk: nbt.chunk, dimension: str):
             print("%s - (%s, %s, %s) - %s" % (id, x, y, z, dimension))
             print("-"*40)
             for item in entity["Items"]:
-                if id.startswith("minecraft:"):
+                # Block Entity Names Used To Not Be Prefixed With "minecraft:". E.g. Chest instead of minecraft:chest
+                # Block Entities Could Still Have The Item ID System - https://minecraft-ids.grahamedgecombe.com/
+                if id.startswith("minecraft:") or ":" not in id:
                     if "tag" in item:
                         print("%s - Slot: %s - Count: %s - Tag: %s" % (item["id"], item["Slot"], item["Count"], item["tag"]))
                     else:
@@ -96,6 +107,7 @@ def main_single_player(world_folder: str):
                 continue
 
             # For Retrieving The Right Dimension Name Regardless Of Trailing Slashes
+            # TODO: Grab Actual In Game Dimension Names (Like With /execute in namespace:dimension_name) When Possible
             if dimension.endswith("/") or dimension.endswith("\\"):
                 dimension_folder_name: str = os.path.basename(os.path.dirname(dimension))
             else:
@@ -117,6 +129,9 @@ def main(world_folder: str):
         return 3
 
 
+# List Of Worlds To Test Against
+# https://hermitcraft.fandom.com/wiki/Map_Downloads
+# https://www.2b2t.online/wiki/World%20Downloads
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print("No World Folder Specified!!!")
