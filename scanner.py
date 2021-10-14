@@ -47,6 +47,8 @@ def check_storages(chunk: nbt.chunk, dimension: str):
                     else:
                         print("%s - Slot: %s - Count: %s" % (item["id"], item["Slot"], item["Count"]))
                 else:
+                    # TODO: Read Modded Such As TechReborn and RandomTech Without Crashing
+                    #   This involves checking the NBT Data In Game To See What I Should Expect
                     print("Modded - %s" % item)
             print("-"*40)
             print(" ")
@@ -87,7 +89,11 @@ def main_single_player(world_folder: str):
 
     try:
         for dimension in dimensions_to_scan:
-            world = WorldFolder(dimension)
+            try:
+                world = WorldFolder(dimension)
+            except nbt.world.UnknownWorldFormat:
+                # E.g Empty World
+                continue
 
             # For Retrieving The Right Dimension Name Regardless Of Trailing Slashes
             if dimension.endswith("/") or dimension.endswith("\\"):
