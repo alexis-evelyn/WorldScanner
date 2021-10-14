@@ -117,7 +117,15 @@ def main_single_player(world_folder: str):
             # world.iter_nbt() is what hermitcraft7 breaks:
             #   UnicodeDecodeError: 'utf-8' codec can't decode byte 0xed in position 9: invalid continuation byte
             for chunk in world.iter_nbt():
-                check_storages(chunk=chunk, dimension=dimension_folder_name)
+                try:
+                    check_storages(chunk=chunk, dimension=dimension_folder_name)
+                except UnicodeDecodeError as e:
+                    # This won't catch the issue as the issue is in world.iter_nbt(), not check_storages(...)
+                    # TODO: See Bug Report With Patch For Fix: https://github.com/twoolie/NBT/issues/144
+                    print("Failed To Read Chunk (%s, %s) Due To Invalid Data!!!" % ("x", "z"))
+                    print("-"*40)
+                    print("Trace: %s" % e)
+                    print("-"*40)
     except KeyboardInterrupt:
         return 3
 
