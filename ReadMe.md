@@ -1,0 +1,1 @@
+`pip3 install requests mcrcon mutf8 file:/Users/alexis/IdeaProjects/NBT quarry`
