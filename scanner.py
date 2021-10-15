@@ -6,8 +6,7 @@ import nbt
 from nbt.world import WorldFolder
 
 
-# https://minecraft.fandom.com/wiki/Chunk_format
-def check_storages(chunk: nbt.chunk, dimension: str):
+def check_block_entities(chunk: nbt.chunk, dimension: str):
     # TODO: Look Up Chunk Version Differences And Create Handlers
     #   For Each Of The Differences (Then Abstract The Data To My Own Format)
     chunk_version: Optional[int] = None
@@ -42,27 +41,140 @@ def check_storages(chunk: nbt.chunk, dimension: str):
 
     # TODO: (1463, 201, 1337) - Find Out Where The Illegal Sword's Gone
     for entity in chunk_data["TileEntities"]:
-        id: str = entity["id"].value
+        be_id: str = entity["id"].value
         x, y, z = entity["x"].value, entity["y"].value, entity["z"].value
 
-        # https://minecraft.fandom.com/wiki/Chunk_format#Block_entity_format
-        if "Items" in entity and len(entity["Items"]) > 0:
-            print("%s - (%s, %s, %s) - %s" % (id, x, y, z, dimension))
-            print("-"*40)
-            for item in entity["Items"]:
-                # Block Entity Names Used To Not Be Prefixed With "minecraft:". E.g. Chest instead of minecraft:chest
-                # Block Entities Could Still Have The Item ID System - https://minecraft-ids.grahamedgecombe.com/
-                if id.startswith("minecraft:") or ":" not in id:
-                    if "tag" in item:
-                        print("%s - Slot: %s - Count: %s - Tag: %s" % (item["id"], item["Slot"], item["Count"], item["tag"]))
-                    else:
-                        print("%s - Slot: %s - Count: %s" % (item["id"], item["Slot"], item["Count"]))
-                else:
-                    # TODO: Read Modded Such As TechReborn and RandomTech Without Crashing
-                    #   This involves checking the NBT Data In Game To See What I Should Expect
-                    print("Modded - %s" % item)
-            print("-"*40)
+        # TODO:
+        #   * Determine Where To Stick Blocks Which Have PowerAcceptor.energy and Items
+        #   * Figure Out Where To Stick totalStoredAmount And Items
+        #   * Figure Out Where To Stick TankStorage and Items
+
+        # Check Storages With `Items` tag
+        check_storages(be_id=be_id, entity=entity, x=x, y=y, z=z, dimension=dimension)
+
+        # Check Lecterns
+        check_lecterns(be_id=be_id, entity=entity, x=x, y=y, z=z, dimension=dimension)
+
+        # Check Jukeboxes
+        check_jukeboxes(be_id=be_id, entity=entity, x=x, y=y, z=z, dimension=dimension)
+
+        # Check Signs
+        check_signs(be_id=be_id, entity=entity, x=x, y=y, z=z, dimension=dimension)
+
+
+def check_signs(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimension: str):
+    if be_id == "minecraft:sign":
+        if "Text1" not in entity:
+            print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+            print("-" * 40)
+            print("Cannot Read Pre-1.8 Signs!!! Skipping For Now!!!")
+            print("-" * 40)
+            return
+
+        glowing: bool = False
+
+        if "GlowingText" in entity:
+            glowing: bool = entity["GlowingText"]
+
+        # What Version Was Color Added?
+        color: str = entity["Color"]
+
+        # Text1-4 Had Been Added In 1.8
+        # TODO: Make Sure To Check If This Exists (Versus Old Style Of NBT Data)
+        line_one: str = entity["Text1"]
+        line_two: str = entity["Text2"]
+        line_three: str = entity["Text3"]
+        line_four: str = entity["Text4"]
+
+        print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+        print("-" * 40)
+        print("Glowing: %s" % glowing)
+        print("Color: %s" % color)
+        print("Line 1: %s" % line_one)
+        print("Line 2: %s" % line_two)
+        print("Line 3: %s" % line_three)
+        print("Line 4: %s" % line_four)
+        print("-" * 40)
+        print(" ")
+
+
+def check_lecterns(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimension: str):
+    if be_id == "minecraft:lectern":
+        book: Optional[nbt.nbt] = None
+        page: Optional[int] = None
+
+        if "Book" in entity:
+            book: nbt.nbt = entity["Book"]
+
+        if "Page" in entity:
+            page: int = entity["Page"]
+
+        # Check For Book Item
+        if book is not None:
+            print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+            print("-" * 40)
+            print_item(item=book)  # Lecterns Don't Have A Slot Tag
+
+        # Check For Page Tag Separately In Case It Doesn't Exist
+        if page is not None:
+            print("Page: %s" % page)
+
+        print("-" * 40)
+        print(" ")
+
+
+def check_jukeboxes(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimension: str):
+    # What's With The `Record` Tag Pre-1.13?
+    if be_id == "minecraft:jukebox":
+        record: Optional[nbt.nbt] = None
+
+        if "RecordItem" in entity:
+            record: nbt.nbt = entity["RecordItem"]
+
+            print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+            print("-" * 40)
+            print_item(item=record)  # Jukeboxes Don't Have A Slot Tag
+            print("-" * 40)
             print(" ")
+
+
+# https://minecraft.fandom.com/wiki/Chunk_format
+def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimension: str):
+    # https://minecraft.fandom.com/wiki/Chunk_format#Block_entity_format
+    if "Items" in entity and len(entity["Items"]) > 0:
+        print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+        print("-" * 40)
+
+        if "CustomName" in entity:
+            print("Custom Name: %s" % entity["CustomName"])
+
+        items: nbt.nbt = entity["Items"]
+        if "Items" in items:
+            # TechReborn Based Block Entities Are Weird
+            # See Items.Items[]
+            items: nbt.nbt = items["Items"]
+
+        for item in items:
+            print_item(item=item)
+
+        print("-" * 40)
+        print(" ")
+
+
+def print_item(item: nbt.nbt):
+    # Block Entity Names Used To Not Be Prefixed With "minecraft:". E.g. Chest instead of minecraft:chest
+    # Block Entities Could Still Have The Item ID System - https://minecraft-ids.grahamedgecombe.com/
+    # TODO: Make Something Cleaner Than Nested If Statements And Copied Messages
+    if "Slot" in item:
+        if "tag" in item:
+            print("%s - Slot: %s - Count: %s - Tag: %s" % (item["id"], item["Slot"], item["Count"], item["tag"]))
+        else:
+            print("%s - Slot: %s - Count: %s" % (item["id"], item["Slot"], item["Count"]))
+    else:
+        if "tag" in item:
+            print("%s - Count: %s - Tag: %s" % (item["id"], item["Count"], item["tag"]))
+        else:
+            print("%s - Count: %s" % (item["id"], item["Count"]))
 
 
 def main_single_player(world_folder: str):
@@ -113,29 +225,27 @@ def main_single_player(world_folder: str):
             else:
                 dimension_folder_name: str = os.path.basename(dimension)
 
-            # TODO: Fix This Breakage!!!
-            # world.iter_nbt() is what hermitcraft7 breaks:
-            #   UnicodeDecodeError: 'utf-8' codec can't decode byte 0xed in position 9: invalid continuation byte
             for chunk in world.iter_nbt():
                 try:
-                    check_storages(chunk=chunk, dimension=dimension_folder_name)
+                    # Check Block Entities
+                    check_block_entities(chunk=chunk, dimension=dimension)
+
+                    # Check Entities (Behavior Is Different Starting In 1.17)
+                    # ...
+
+                    # Check Player Inventories
+                    # ...
+
+                    # Check Player Ender Chests
+                    # ...
                 except UnicodeDecodeError as e:
                     # This won't catch the issue as the issue is in world.iter_nbt(), not check_storages(...)
+                    # hermitcraft6 currently breaks the scanner. Docm77 Alien Tech Books Are To Blame
                     # TODO: See Bug Report With Patch For Fix: https://github.com/twoolie/NBT/issues/144
                     print("Failed To Read Chunk (%s, %s) Due To Invalid Data!!!" % ("x", "z"))
-                    print("-"*40)
+                    print("-" * 40)
                     print("Trace: %s" % e)
-                    print("-"*40)
-    except KeyboardInterrupt:
-        return 3
-
-
-def main(world_folder: str):
-    world = WorldFolder(world_folder)
-
-    try:
-        for chunk in world.iter_nbt():
-            check_storages(chunk=chunk, dimension=os.path.basename(world_folder))
+                    print("-" * 40)
     except KeyboardInterrupt:
         return 3
 
@@ -143,7 +253,7 @@ def main(world_folder: str):
 # List Of Worlds To Test Against
 # https://hermitcraft.fandom.com/wiki/Map_Downloads
 # https://www.2b2t.online/wiki/World%20Downloads
-# hermitcraft7 currently breaks the scanner. Chunk corruption?
+# https://download.scicraft.net/
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print("No World Folder Specified!!!")
