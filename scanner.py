@@ -140,6 +140,14 @@ def check_jukeboxes(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensi
 
 # https://minecraft.fandom.com/wiki/Chunk_format
 def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimension: str):
+    # if "LootTableSeed" in entity:
+    #     print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+    #     print("-" * 40)
+    #     print("Loot Table: %s" % entity["LootTable"])
+    #     print("Loot Table Seed: %s" % entity["LootTableSeed"])
+    #     print("-" * 40)
+    #     print(" ")
+
     # https://minecraft.fandom.com/wiki/Chunk_format#Block_entity_format
     if "Items" in entity and len(entity["Items"]) > 0:
         print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
