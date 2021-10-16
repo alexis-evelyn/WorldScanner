@@ -76,7 +76,6 @@ def check_signs(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimension: 
             return
 
         glowing: bool = False
-
         if "GlowingText" in entity:
             glowing: bool = entity["GlowingText"]
 

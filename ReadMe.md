@@ -1,1 +1,1 @@
-`pip3 install requests mcrcon mutf8 file:/Users/alexis/IdeaProjects/NBT quarry`
+`pip3 install requests mcrcon mutf8 git+https://github.com/alexis-evelyn/NBT quarry`
