@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 from typing import List, Optional
 
 import nbt
@@ -32,6 +33,9 @@ def check_block_entities(chunk: nbt.chunk, dimension: str):
     # If Not full, chunk is not fully generated yet and can be ignored for illegal item searching
     if chunk_status is not None and chunk_status.value.strip() != "full":
         return
+
+    # Figure Out What To Do With Above Code So It's Not Duplicated
+    # ------------------------------------------------------------------------------------------------------------
 
     # TileEntities (Block Entities), Entities, Sections (Blocks, A Bit Complicated)
     # Starting In 1.17, Entities Won't Exist In This File Once A Chunk Is Fully Generated
@@ -185,6 +189,60 @@ def print_item(item: nbt.nbt):
             print("%s - Count: %s" % (item["id"], item["Count"]))
 
 
+def check_entities(chunk: nbt.chunk, dimension: str):
+    chunk_data: nbt.nbt = {}
+    if "Level" in chunk:
+        # Pre-1.17 Entity Storage
+        chunk_data: nbt.nbt = chunk["Level"]
+    elif "Entities" in chunk:
+        # 1.17+ Entity Storage
+        chunk_data: nbt.nbt = chunk
+
+    if "Entities" in chunk_data:
+        for entity in chunk_data["Entities"]:
+            e_id: str = entity["id"].value
+            x, y, z = entity["Pos"]
+
+            # For Parity With BlockEntity Storage Being Hidden When No Items Inside
+            # TODO: Separate These To Their Own Separate Functions Like Block Entities
+            if ("Items" in entity and len(entity["Items"]) == 0) or e_id == "minecraft:chest_minecart" and "Items" not in entity:
+                return
+
+            print("%s - (%s, %s, %s) - %s" % (e_id, x, y, z, dimension))
+            print("-" * 40)
+
+            if e_id == "minecraft:falling_block":
+                print("Block: %s" % entity["BlockState"]["Name"])
+
+            # Item Entities and Item Frames
+            if "Item" in entity:
+                print("Item: ", end="")
+                print_item(entity["Item"])
+
+            # Chest Minecarts
+            if "Items" in entity and len(entity["Items"]) > 0:
+                items: nbt.nbt = entity["Items"]
+                for item in items:
+                    print_item(item=item)
+
+            # Custom Name (e.g. name tagged)
+            custom_name: Optional[str] = None
+            if "CustomName" in entity:
+                custom_name: str = entity["CustomName"]
+                print("Name: %s" % custom_name)
+
+            health: Optional[str] = None
+            if "Health" in entity:
+                health: str = entity["Health"]
+                print("Health: %s" % health)
+
+            # TODO: Parse UUID To 32 Character Hex String (Format Changes In 1.16)
+            #   See: https://minecraft.fandom.com/wiki/Universally_unique_identifier
+            print("UUID: %s" % entity["UUID"])
+            print("-" * 40)
+            print(" ")
+
+
 def main_single_player(world_folder: str):
     # TODO: Scan Player Inventories And Ender Chests
 
@@ -236,16 +294,10 @@ def main_single_player(world_folder: str):
             for chunk in world.iter_nbt():
                 try:
                     # Check Block Entities
-                    check_block_entities(chunk=chunk, dimension=dimension)
+                    check_block_entities(chunk=chunk, dimension=dimension_folder_name)
 
                     # Check Entities (Behavior Is Different Starting In 1.17)
-                    # ...
-
-                    # Check Player Inventories
-                    # ...
-
-                    # Check Player Ender Chests
-                    # ...
+                    check_entities(chunk=chunk, dimension=dimension_folder_name)
                 except UnicodeDecodeError as e:
                     # This won't catch the issue as the issue is in world.iter_nbt(), not check_storages(...)
                     # hermitcraft6 currently breaks the scanner. Docm77 Alien Tech Books Are To Blame
@@ -254,6 +306,36 @@ def main_single_player(world_folder: str):
                     print("-" * 40)
                     print("Trace: %s" % e)
                     print("-" * 40)
+
+            # Region File Name - For Grabbing Entities From Entities Folder If It Exists (Post 1.17)
+            entity_files_path: str = os.path.join(dimension, "entities")
+            if os.path.exists(entity_files_path):
+                entity_region_file_names: List[str] = os.listdir(entity_files_path)
+                entity_region_file_list: List[str] = []
+                for region_file in entity_region_file_names:
+                    if region_file.endswith(".mca"):
+                        entity_region_file_list.append(os.path.join(entity_files_path, region_file))
+
+                world.set_regionfiles(entity_region_file_list)
+
+            for chunk in world.iter_nbt():
+                try:
+                    # Check Entities (Behavior Is Different Starting In 1.17)
+                    check_entities(chunk=chunk, dimension=dimension_folder_name)
+                except UnicodeDecodeError as e:
+                    # This won't catch the issue as the issue is in world.iter_nbt(), not check_storages(...)
+                    # hermitcraft6 currently breaks the scanner. Docm77 Alien Tech Books Are To Blame
+                    # TODO: See Bug Report With Patch For Fix: https://github.com/twoolie/NBT/issues/144
+                    print("Failed To Read Chunk (%s, %s) Due To Invalid Data!!!" % ("x", "z"))
+                    print("-" * 40)
+                    print("Trace: %s" % e)
+                    print("-" * 40)
+
+            # Check Player Inventories
+            # ...
+
+            # Check Player Ender Chests
+            # ...
     except KeyboardInterrupt:
         return 3
 
