@@ -238,7 +238,12 @@ def check_entities(chunk: nbt.chunk, dimension: str):
 
             # TODO: Parse UUID To 32 Character Hex String (Format Changes In 1.16)
             #   See: https://minecraft.fandom.com/wiki/Universally_unique_identifier
-            print("UUID: %s" % entity["UUID"])
+            # Check If UUID Exists (hermitcraft7 has a turtle that doesn't have a UUID)
+            e_uuid: Optional[str] = None
+            if "UUID" in entity:
+                e_uuid: str = entity["UUID"]
+
+            print("UUID: %s" % e_uuid)
             print("-" * 40)
             print(" ")
 
