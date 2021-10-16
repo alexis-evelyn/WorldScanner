@@ -81,7 +81,9 @@ def check_signs(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimension: 
             glowing: bool = entity["GlowingText"]
 
         # What Version Was Color Added?
-        color: str = entity["Color"]
+        color: Optional[str] = None
+        if "Color" in entity:
+            color: str = entity["Color"]
 
         # Text1-4 Had Been Added In 1.8
         # TODO: Make Sure To Check If This Exists (Versus Old Style Of NBT Data)
