@@ -194,6 +194,7 @@ def check_entities(chunk: nbt.chunk, dimension: str):
     chunk_data: nbt.nbt = {}
     if "Level" in chunk:
         # Pre-1.17 Entity Storage
+        # Technically, Post 1.17 Worlds Have This, They Just Don't Have Entities In Them, So Maybe Rename The Check?
         chunk_data: nbt.nbt = chunk["Level"]
     elif "Entities" in chunk:
         # 1.17+ Entity Storage
@@ -203,6 +204,10 @@ def check_entities(chunk: nbt.chunk, dimension: str):
         for entity in chunk_data["Entities"]:
             e_id: str = entity["id"].value
             x, y, z = entity["Pos"]
+
+            # Temporarily Block All Non-Markers From The Entity Output List
+            # if e_id != "minecraft:marker":
+            #     continue
 
             # For Parity With BlockEntity Storage Being Hidden When No Items Inside
             # TODO: Separate These To Their Own Separate Functions Like Block Entities
@@ -236,6 +241,10 @@ def check_entities(chunk: nbt.chunk, dimension: str):
             if "Health" in entity:
                 health: str = entity["Health"]
                 print("Health: %s" % health)
+
+            # Markers Are Meant For Datapacks To Be Able To Store NBT Data
+            if e_id == "minecraft:marker":
+                print("Data: %s" % entity["data"])
 
             # TODO: Parse UUID To 32 Character Hex String (Format Changes In 1.16)
             #   See: https://minecraft.fandom.com/wiki/Universally_unique_identifier
