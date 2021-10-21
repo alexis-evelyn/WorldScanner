@@ -67,7 +67,21 @@ def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensio
             #     Also make sure to account for bundles too.
             # ...
 
+            # We Want To Display The Embedded Storage First, Then The Items Inside
+            # TODO: Note: This Isn't Recursive, So Won't Display Bundles In Bundles Or Bundles In Shulker Boxes
             add_item(item=item)
+            if "tag" in item and "BlockEntityTag" in item["tag"] and "Items" in item["tag"]["BlockEntityTag"] and len(item["tag"]["BlockEntityTag"]["Items"]) > 0:
+                # Shulker Boxes
+                print("-"*20)
+                for embedded_item in item["tag"]["BlockEntityTag"]["Items"]:
+                    add_item(item=embedded_item)
+                print("-"*20)
+            elif "tag" in item and "Items" in item["tag"] and len(item["tag"]["Items"]) > 0:
+                # Bundles
+                print("-"*20)
+                for embedded_item in item["tag"]["Items"]:
+                    add_item(item=embedded_item)
+                print("-"*20)
 
         print("-" * 40)
         print(" ")
