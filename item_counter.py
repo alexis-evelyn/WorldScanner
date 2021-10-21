@@ -63,7 +63,8 @@ def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensio
                 item["Count"].value = tr_storage_unit_count
 
             # Todo: Add Means Of Recursively Findings Contents of Shulkers In Chests (Even Chests With NBT Data)
-            #     Make sure to have a limit on the recursion, so check what the vanilla limit is
+            #     Make sure to have a limit on the recursion, so check what the vanilla limit is.
+            #     Also make sure to account for bundles too.
             # ...
 
             add_item(item=item)
