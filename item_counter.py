@@ -53,12 +53,19 @@ def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensio
             # See Items.Items[]
             items: nbt.nbt = items["Items"]
 
+        tr_storage_unit_count: Optional[int] = None
+        if "totalStoredAmount" in entity:
+            tr_storage_unit_count: int = int(entity["totalStoredAmount"].value)
+
         for item in items:
-            # Due To Not Currently Being Able To Read Contents Of Shulkers In Chests ATM,
-            #   I'm Allowing Coords Of Storage BEs With Shulker Boxes In Them
-            #   So I Can Head Over To The Shulkers And Pull Them Out
-            if "shulker" in str(item["id"].value):
-                print("Shulker Item Found In: %s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+            # Modify Item Count So It Represents TechReborn Storage Units
+            if tr_storage_unit_count is not None:
+                item["Count"].value = tr_storage_unit_count
+
+            # Todo: Add Means Of Recursively Findings Contents of Shulkers In Chests (Even Chests With NBT Data)
+            #     Make sure to have a limit on the recursion, so check what the vanilla limit is
+            # ...
+
             add_item(item=item)
 
         print("-" * 40)
