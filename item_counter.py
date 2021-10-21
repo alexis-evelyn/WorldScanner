@@ -54,6 +54,11 @@ def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensio
             items: nbt.nbt = items["Items"]
 
         for item in items:
+            # Due To Not Currently Being Able To Read Contents Of Shulkers In Chests ATM,
+            #   I'm Allowing Coords Of Storage BEs With Shulker Boxes In Them
+            #   So I Can Head Over To The Shulkers And Pull Them Out
+            if "shulker" in str(item["id"].value):
+                print("Shulker Item Found In: %s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
             add_item(item=item)
 
         print("-" * 40)
