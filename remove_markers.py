@@ -200,7 +200,7 @@ def main_single_player(world_folder: str):
 
                         # Causes Infinite Recursion Loop For Some Reason, Makes It Impossible To Edit Chunks
                         # TODO: Figure Out What To Do About: https://github.com/twoolie/NBT/blob/b735d465d198965e7347d24493bfe2e4e30fe39a/nbt/nbt.py#L703
-                        region.write_chunk(x=x_pos, z=z_pos, nbt_file=chunk)
+                        # region.write_chunk(x=x_pos, z=z_pos, nbt_file=chunk)
 
                     # print(region.pretty_tree())
                     # region.write_file(region_file_path)
