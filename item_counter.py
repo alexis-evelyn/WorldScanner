@@ -59,7 +59,9 @@ def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensio
 
         for item in items:
             # Modify Item Count So It Represents TechReborn Storage Units
-            if tr_storage_unit_count is not None:
+            # Only Slot 1 (Output Slot) Counts For The Total Storage Units.
+            #     Slot 0 (Input Slot) Doesn't Count, Even If It Has Items In It
+            if tr_storage_unit_count is not None and int(item["Slot"].value) == 1:
                 item["Count"].value = tr_storage_unit_count
 
             # Todo: Add Means Of Recursively Findings Contents of Shulkers In Chests (Even Chests With NBT Data)
@@ -69,17 +71,30 @@ def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensio
 
             # We Want To Display The Embedded Storage First, Then The Items Inside
             # TODO: Note: This Isn't Recursive, So Won't Display Bundles In Bundles Or Bundles In Shulker Boxes
+            print_item(item=item)
             add_item(item=item)
             if "tag" in item and "BlockEntityTag" in item["tag"] and "Items" in item["tag"]["BlockEntityTag"] and len(item["tag"]["BlockEntityTag"]["Items"]) > 0:
                 # Shulker Boxes
                 print("-"*20)
                 for embedded_item in item["tag"]["BlockEntityTag"]["Items"]:
+                    print_item(item=embedded_item)
+
+                    # To Take Care Of Stacked Shulker Boxes (e.g. in TR Storage Units)
+                    if int(item["Count"].value) > 1:
+                        embedded_item["Count"].value = int(embedded_item["Count"].value) * int(item["Count"].value)
+
                     add_item(item=embedded_item)
                 print("-"*20)
             elif "tag" in item and "Items" in item["tag"] and len(item["tag"]["Items"]) > 0:
                 # Bundles
                 print("-"*20)
                 for embedded_item in item["tag"]["Items"]:
+                    print_item(item=embedded_item)
+
+                    # To Take Care Of Stacked Bundles (e.g. in TR Storage Units)
+                    if int(item["Count"].value) > 1:
+                        embedded_item["Count"].value = int(embedded_item["Count"].value) * int(item["Count"].value)
+
                     add_item(item=embedded_item)
                 print("-"*20)
 
@@ -91,7 +106,6 @@ def add_item(item: nbt.nbt):
     # Block Entity Names Used To Not Be Prefixed With "minecraft:". E.g. Chest instead of minecraft:chest
     # Block Entities Could Still Have The Item ID System - https://minecraft-ids.grahamedgecombe.com/
 
-    print_item(item=item)
     if str(item["id"].value) in total_item_list:
         total_item_list[str(item["id"].value)]["count"] += int(item["Count"].value)
     else:
@@ -175,7 +189,9 @@ def main_single_player(world_folder: str):
                     print("-" * 40)
 
         df = pd.DataFrame.from_dict(total_item_list, orient="index")
-        df.sort_values(axis=0, ascending=False, inplace=True, by=["count"])
+        df.index.name = "Item ID"
+        df.sort_values(axis=0, ascending=False, inplace=True, by=["Count"])
+        df["Total"] = df["Count"].sum()
         print("-"*100)
         print(df)
         df.to_csv("~/Desktop/total_item_list.csv")
