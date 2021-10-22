@@ -107,10 +107,10 @@ def add_item(item: nbt.nbt):
     # Block Entities Could Still Have The Item ID System - https://minecraft-ids.grahamedgecombe.com/
 
     if str(item["id"].value) in total_item_list:
-        total_item_list[str(item["id"].value)]["count"] += int(item["Count"].value)
+        total_item_list[str(item["id"].value)]["Count"] += int(item["Count"].value)
     else:
         total_item_list[str(item["id"].value)] = {}
-        total_item_list[str(item["id"].value)]["count"] = int(item["Count"].value)
+        total_item_list[str(item["id"].value)]["Count"] = int(item["Count"].value)
 
 
 def print_item(item: nbt.nbt):
@@ -194,7 +194,7 @@ def main_single_player(world_folder: str):
         df["Total"] = df["Count"].sum()
         print("-"*100)
         print(df)
-        df.to_csv("~/Desktop/total_item_list.csv")
+        df.to_csv(os.path.join(world_folder, "total_item_list.csv"))
     except KeyboardInterrupt:
         return 3
 
