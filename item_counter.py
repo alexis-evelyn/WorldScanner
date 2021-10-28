@@ -39,13 +39,13 @@ def check_storages(be_id: str, entity: nbt.nbt, x: int, y: int, z: int, dimensio
     # https://minecraft.fandom.com/wiki/Chunk_format#Block_entity_format
     if "Items" in entity and len(entity["Items"]) > 0:
         # This Code Works, I Just Hid It So I Don't See Coords
-        # print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
+        print("%s - (%s, %s, %s) - %s" % (be_id, x, y, z, dimension))
 
-        print("%s" % be_id)
+        # print("%s" % be_id)
         print("-" * 40)
 
-        # if "CustomName" in entity:
-        #     print("Custom Name: %s" % entity["CustomName"])
+        if "CustomName" in entity:
+            print("Custom Name: %s" % entity["CustomName"])
 
         items: nbt.nbt = entity["Items"]
         if "Items" in items:
