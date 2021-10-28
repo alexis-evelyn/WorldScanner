@@ -130,65 +130,65 @@ def main_single_player(world_folder: str):
             else:
                 dimension_id: str = "minecraft:overworld"
 
-            for region in world.iter_regions():
-                modified_chunks: List[nbt.nbt] = []
-                for chunk in region.iter_chunks():
-                    try:
-                        # Check Entities (Behavior Is Different Starting In 1.17)
-                        was_modified, pre_format_change, modified_chunk = check_entities(chunk=chunk, dimension=dimension_folder_name, folder=dimension)
-
-                        if was_modified:
-                            modified_chunks.append(chunk)
-                    except UnicodeDecodeError as e:
-                        # This won't catch the issue as the issue is in world.iter_nbt(), not check_storages(...)
-                        # hermitcraft6 currently breaks the scanner. Docm77 Alien Tech Books Are To Blame
-                        # TODO: See Bug Report With Patch For Fix: https://github.com/twoolie/NBT/issues/144
-                        print("Failed To Read Chunk (%s, %s) Due To Invalid Data!!!" % ("x", "z"))
-                        print("-" * 40)
-                        print("Trace: %s" % e)
-                        print("-" * 40)
-
-                # Untested
-                if len(modified_chunks) > 0:
-                    datapack_script = open(datapack_script_path, mode="w")
-
-                    datapack_script.write("# say Performing Marker Cleanup For 1.16- World Data (This Should Never Run As Markers Were Added in 1.17)\n")
-                    datapack_script.write("data modify storage cleanup:marker current_dimension set value \"%s\"\n" % dimension_id)
-                    for chunk in modified_chunks:
-                        chunk_data: nbt.nbt = chunk["Level"]
-                        x_pos: TAG_Int = chunk_data["xPos"]
-                        z_pos: TAG_Int = chunk_data["zPos"]
-
-                        # Cause Forceload Takes Block Coords
-                        block_x: int = x_pos.value << 4
-                        block_z: int = z_pos.value << 4
-
-                        region.write_chunk(x=x_pos.value, z=z_pos.value, nbt_file=chunk)
-
-                        # This'll Deal With Async Chunk Loading
-                        datapack_script.write("say Killing Markers In Chunk (%s, %s) in %s\n" % (x_pos.value, z_pos.value, dimension_id))
-                        datapack_script.write("execute in %s run forceload add %s %s\n" % (dimension_id, block_x, block_z))
-
-                        # So, the problem is, the variables will be replaced before the function finishes running
-                        # datapack_script.write("data modify storage cleanup:marker current_block_x set value %s\n" % block_x)
-                        # datapack_script.write("data modify storage cleanup:marker current_block_z set value %s\n" % block_z)
-                        # datapack_script.write("schedule function worldcleaner:main/deletemarkers 1t append\n")
-
-                        # Won't Work Due To Async Chunk Loading
-                        # datapack_script.write("say Killing Markers In Chunk (%s, %s) in %s\n" % (x_pos.value, z_pos.value, dimension_id))
-                        # datapack_script.write("execute in %s run forceload add %s %s\n" % (dimension_id, block_x, block_z))
-                        # datapack_script.write("execute in %s run kill @e[type=minecraft:marker]\n" % dimension_id)
-                        # datapack_script.write("execute in %s run forceload remove %s %s\n" % (dimension_id, block_x, block_z))
-
-                    datapack_script.write("schedule function worldcleaner:main/deletemarkers 1t append\n")
-
-                    # For 3 Dimensions
-                    datapack_script.write("schedule function worldcleaner:main/unloadoverworld 1t append\n")
-                    datapack_script.write("schedule function worldcleaner:main/unloadnether 1t append\n")
-                    datapack_script.write("schedule function worldcleaner:main/unloadend 1t append\n")
-                    # datapack_script.write("execute in %s run forceload remove all\n\n" % dimension_id)
-                    datapack_script.flush()
-                    datapack_script.close()
+            # for region in world.iter_regions():
+                # modified_chunks: List[nbt.nbt] = []
+                # for chunk in region.iter_chunks():
+                #     try:
+                #         # Check Entities (Behavior Is Different Starting In 1.17)
+                #         was_modified, pre_format_change, modified_chunk = check_entities(chunk=chunk, dimension=dimension_folder_name, folder=dimension)
+                #
+                #         if was_modified:
+                #             modified_chunks.append(chunk)
+                #     except UnicodeDecodeError as e:
+                #         # This won't catch the issue as the issue is in world.iter_nbt(), not check_storages(...)
+                #         # hermitcraft6 currently breaks the scanner. Docm77 Alien Tech Books Are To Blame
+                #         # TODO: See Bug Report With Patch For Fix: https://github.com/twoolie/NBT/issues/144
+                #         print("Failed To Read Chunk (%s, %s) Due To Invalid Data!!!" % ("x", "z"))
+                #         print("-" * 40)
+                #         print("Trace: %s" % e)
+                #         print("-" * 40)
+                #
+                # # Untested
+                # if len(modified_chunks) > 0:
+                #     datapack_script = open(datapack_script_path, mode="w")
+                #
+                #     datapack_script.write("# say Performing Marker Cleanup For 1.16- World Data (This Should Never Run As Markers Were Added in 1.17)\n")
+                #     datapack_script.write("data modify storage cleanup:marker current_dimension set value \"%s\"\n" % dimension_id)
+                #     for chunk in modified_chunks:
+                #         chunk_data: nbt.nbt = chunk["Level"]
+                #         x_pos: TAG_Int = chunk_data["xPos"]
+                #         z_pos: TAG_Int = chunk_data["zPos"]
+                #
+                #         # Cause Forceload Takes Block Coords
+                #         block_x: int = x_pos.value << 4
+                #         block_z: int = z_pos.value << 4
+                #
+                #         region.write_chunk(x=x_pos.value, z=z_pos.value, nbt_file=chunk)
+                #
+                #         # This'll Deal With Async Chunk Loading
+                #         datapack_script.write("say Killing Markers In Chunk (%s, %s) in %s\n" % (x_pos.value, z_pos.value, dimension_id))
+                #         datapack_script.write("execute in %s run forceload add %s %s\n" % (dimension_id, block_x, block_z))
+                #
+                #         # So, the problem is, the variables will be replaced before the function finishes running
+                #         # datapack_script.write("data modify storage cleanup:marker current_block_x set value %s\n" % block_x)
+                #         # datapack_script.write("data modify storage cleanup:marker current_block_z set value %s\n" % block_z)
+                #         # datapack_script.write("schedule function worldcleaner:main/deletemarkers 1t append\n")
+                #
+                #         # Won't Work Due To Async Chunk Loading
+                #         # datapack_script.write("say Killing Markers In Chunk (%s, %s) in %s\n" % (x_pos.value, z_pos.value, dimension_id))
+                #         # datapack_script.write("execute in %s run forceload add %s %s\n" % (dimension_id, block_x, block_z))
+                #         # datapack_script.write("execute in %s run kill @e[type=minecraft:marker]\n" % dimension_id)
+                #         # datapack_script.write("execute in %s run forceload remove %s %s\n" % (dimension_id, block_x, block_z))
+                #
+                #     datapack_script.write("schedule function worldcleaner:main/deletemarkers 1t append\n")
+                #
+                #     # For 3 Dimensions
+                #     datapack_script.write("schedule function worldcleaner:main/unloadoverworld 1t append\n")
+                #     datapack_script.write("schedule function worldcleaner:main/unloadnether 1t append\n")
+                #     datapack_script.write("schedule function worldcleaner:main/unloadend 1t append\n")
+                #     # datapack_script.write("execute in %s run forceload remove all\n\n" % dimension_id)
+                #     datapack_script.flush()
+                #     datapack_script.close()
 
             # Region File Name - For Grabbing Entities From Entities Folder If It Exists (Post 1.17)
             entity_files_path: str = os.path.join(dimension, "entities")
